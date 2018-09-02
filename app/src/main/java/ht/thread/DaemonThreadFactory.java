@@ -13,6 +13,7 @@ public class DaemonThreadFactory implements ThreadFactory, Thread.UncaughtExcept
     @Override
     public Thread newThread(@NonNull Runnable r) {
         Thread thread = new Thread(r);
+        //设置为后台线程
         thread.setDaemon(true);
         return thread;
     }

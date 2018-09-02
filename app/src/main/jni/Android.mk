@@ -2,7 +2,6 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-
 OpenCV_INSTALL_MODULES := on
 OpenCV_CAMERA_MODULES := off
 

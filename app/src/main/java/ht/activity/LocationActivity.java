@@ -19,10 +19,13 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import ht.bean.Coordinate;
@@ -249,7 +252,6 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
         }
 
 //        handlePicture();
-
         mImageThread.handlePic();
 
     }
@@ -257,6 +259,10 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
     private List<Integer> mLedLineList;
 
     public void handlePicture() {
+        //图像处理开始时间：2018/06/24-20:49:25:707
+        System.out.println("图像处理开始时间："+
+        new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+
         Mat resMat = new Mat();
         Mat disMat = new Mat();
         //获得图片并转换成矩阵
@@ -267,15 +273,38 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
 //        Size size = new Size(resMat.width() * 0.8, resMat.height() * 0.8);
 //        Imgproc.resize(resMat, resMat, size);
 
-        Log.d("htout", "aaa");
+        //图像灰度化开始时间：2018/06/24-20:49:25:904
+        System.out.println("图像灰度化开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
         //灰度化
         Imgproc.cvtColor(resMat, disMat, Imgproc.COLOR_RGB2GRAY);
+        //图像灰度化结束时间／二值化开始时间：2018/06/24-20:49:25:911
+        System.out.println("图像灰度化结束时间／二值化开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
         //二值化
         Imgproc.threshold(disMat, disMat, 12, 255, Imgproc.THRESH_TOZERO);
         Imgproc.threshold(disMat, disMat, 12, 255, Imgproc.THRESH_BINARY);
-        //形态学闭运算
+        //图像二值化结束时间：2018/06/24-20:49:25:917
+        System.out.println("图像二值化结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+
+        resMat = disMat.clone();
+
+        //图像闭运算开始时间：2018/06/24-20:49:25:922
+        System.out.println("图像闭运算开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+        //形态学闭运算--------1.5s左右
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(40, 40));
         Imgproc.morphologyEx(disMat, disMat, Imgproc.MORPH_CLOSE, kernel);
+        //图像处理闭运算结束时间：2018/06/24-20:49:27:246
+        System.out.println("图像处理闭运算结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+
+        //灰度化
+//        Imgproc.cvtColor(resMat, resMat, Imgproc.COLOR_RGB2GRAY);
+//        //二值化
+//        Imgproc.threshold(resMat, resMat, 12, 255, Imgproc.THRESH_TOZERO);
+//        Imgproc.threshold(resMat, resMat, 12, 255, Imgproc.THRESH_BINARY);
 
 //        //腐蚀
 //        kernel=Imgproc.getStructuringElement(Imgproc.MORPH_ERODE, new Size(10, 10));
@@ -289,49 +318,64 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
 //        kernel=Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(10, 10));
 //        Imgproc.dilate(disMat, disMat, kernel);
 
-        //灰度化
-        Imgproc.cvtColor(resMat, resMat, Imgproc.COLOR_RGB2GRAY);
-        //二值化
-        Imgproc.threshold(resMat, resMat, 12, 255, Imgproc.THRESH_TOZERO);
-        Imgproc.threshold(resMat, resMat, 12, 255, Imgproc.THRESH_BINARY);
 
-        Log.d("htout", "bbb");
-
-        final List<Mat> img = new ArrayList<Mat>();
+        final List<Mat> imgs = new ArrayList<Mat>();
         List<Coordinate> X = new ArrayList<Coordinate>();
         List<Coordinate> Y = new ArrayList<Coordinate>();
         List<Integer> S = new ArrayList<Integer>();
-        getLed(resMat, disMat, img, X, Y, S);
+        //图像分割开始时间：2018/06/24-20:49:27:246
+        System.out.println("图像分割开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+        getLed(resMat, disMat, imgs, X, Y, S);
+        //图像分割结束时间：2018/06/24-20:49:27:931
+        System.out.println("图像分割结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
 
-        Log.d("htout", "ccc");
         Log.d(TAG, "width:" + disMat.cols() + " height:" + disMat.rows());
-        Bitmap newBitmap = Bitmap.createBitmap(img.get(0).cols(), img.get(0).rows(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(img.get(0), newBitmap);
+        Bitmap newBitmap = Bitmap.createBitmap(imgs.get(0).cols(), imgs.get(0).rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(imgs.get(0), newBitmap);
 //        mImageView.setImageBitmap(newBitmap);
 
         //检测led条纹数
-//        mLedLineList = MyUtils.LED_Pre_Process(img);
-//        mLedLineList = mImageThread.getLedLineCount(img);
+//        mLedLineList = MyUtils.LED_Pre_Process(imgs);
+//        mLedLineList = mImageThread.getLedLineCount(imgs);
 //        mImageThread.isCollinear(X, Y);
 
+        //获取条纹数开始时间：2018/06/24-20:49:27:933
+        System.out.println("获取条纹数开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+        mLedLineList = getLedLineCountgetLedLineCount(imgs);
+        //获取条纹数结束时间：2018/06/24-20:49:27:935
+        System.out.println("获取条纹数结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
 
-        mLedLineList = getLedLineCountgetLedLineCount(img);
-
-        Log.e(TAG, "mLedLineList:"+mLedLineList);
+        //计算三点是否共线开始时间：2018/06/24-20:49:27:936
+        System.out.println("计算三点是否共线开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
         isCollinear(X, Y);
-        getLocation();
+        //计算三点是否共线结束时间：2018/06/24-20:49:27:936
+        System.out.println("计算三点是否共线结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
 
-        Log.e("TAG", "img的大小："+img.size());
-//        img.add(MyUtils.HoughPrecess(img.get(img.size()-1)));
+        //获取坐标开始时间：2018/06/24-20:49:27:937
+        System.out.println("获取坐标开始时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+        getLocation();
+        //获取坐标结束时间：2018/06/24-20:49:27:938
+        System.out.println("获取坐标结束时间："+
+                new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss:SSS").format(new Date()));
+
+        Log.e("TAG", "imgs的大小："+imgs.size());
+//        imgs.add(MyUtils.HoughPrecess(imgs.get(imgs.size()-1)));
     }
 
 //    private Handler mHandler = new Handler(new Handler.Callback() {
 //        @Override
 //        public boolean handleMessage(Message msg) {
 //
-////            Bitmap led = Bitmap.createBitmap(img.get(img.size()-3).cols(), img.get(img.size()-3).rows(), Bitmap.Config.ARGB_8888);
-////            Utils.matToBitmap(img.get(img.size()-3), led);
-////            mDivideImg.setImageBitmap(led);
+//            Bitmap led = Bitmap.createBitmap(imgs.get(imgs.size()-3).cols(), imgs.get(imgs.size()-3).rows(), Bitmap.Config.ARGB_8888);
+//            Utils.matToBitmap(imgs.get(imgs.size()-3), led);
+//            mDivideImg.setImageBitmap(led);
 //            return false;
 //        }
 //    })
@@ -621,7 +665,7 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
 
         //透镜焦点在image sensor上的位置
         int center_x = 417;
-        int center_y = 341; //透镜焦点在image sensor上的位置
+        int center_y = 341;
 
         //图像中任意两个LED之间的距离
         double d_12 = Math.sqrt(Math.abs(Math.pow(xy[0][0]-xy[1][0],2) + Math.pow(xy[0][1]-xy[1][1],2)))*3.2e-3;
@@ -671,7 +715,6 @@ public class LocationActivity extends AppCompatActivity implements CameraBridgeV
         double y2 = Math.pow(Y[1],2);
         double y3 = Math.pow(Y[2],2);
         Log.d("htout", "ccc:" + r1 + " " + r2 + " " + r3);
-
 
         double a1 = 2*(X[0]-X[2]);
         double b1 = 2*(Y[0]-Y[2]);

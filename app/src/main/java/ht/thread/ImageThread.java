@@ -1,5 +1,9 @@
 package ht.thread;
 
+import android.util.Log;
+
+import com.bumptech.glide.disklrucache.DiskLruCache;
+
 import org.opencv.core.Mat;
 
 import java.util.ArrayList;
@@ -19,6 +23,7 @@ import ht.bean.Coordinate;
  */
 
 public class ImageThread {
+    private final static String TAG = "ImageThread";
 
     private ExecutorService mExecutorService;
     private FutureTask<Integer> mFutureTask;
@@ -54,6 +59,7 @@ public class ImageThread {
                 @Override
                 protected void done() {
                     try{
+                        Log.e(TAG, "mLedLineList: "+ mFutureTask.get());
                         mLedLineList.add(mFutureTask.get());
                         countDownLatch.countDown();
                     }catch (InterruptedException e){
